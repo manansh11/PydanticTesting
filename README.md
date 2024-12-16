@@ -1,254 +1,177 @@
-# Pydantic AI Analysis
+<div align="center">
+  <a href="https://ai.pydantic.dev/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://ai.pydantic.dev/img/pydantic-ai-dark.svg">
+      <img src="https://ai.pydantic.dev/img/pydantic-ai-light.svg" alt="PydanticAI">
+    </picture>
+  </a>
+</div>
+<div align="center">
+  <em>Agent Framework / shim to use Pydantic with LLMs</em>
+</div>
+<div align="center">
+  <a href="https://github.com/pydantic/pydantic-ai/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://github.com/pydantic/pydantic-ai/actions/workflows/ci.yml/badge.svg?event=push" alt="CI"></a>
+  <a href="https://coverage-badge.samuelcolvin.workers.dev/redirect/pydantic/pydantic-ai"><img src="https://coverage-badge.samuelcolvin.workers.dev/pydantic/pydantic-ai.svg" alt="Coverage"></a>
+  <a href="https://pypi.python.org/pypi/pydantic-ai"><img src="https://img.shields.io/pypi/v/pydantic-ai.svg" alt="PyPI"></a>
+  <a href="https://github.com/pydantic/pydantic-ai"><img src="https://img.shields.io/pypi/pyversions/pydantic-ai.svg" alt="versions"></a>
+  <a href="https://github.com/pydantic/pydantic-ai/blob/main/LICENSE"><img src="https://img.shields.io/github/license/pydantic/pydantic-ai.svg?v" alt="license"></a>
+</div>
 
-## Core Functionality and Purpose
+---
 
-Pydantic AI is a type-safe agent framework for building generative AI applications. It provides:
+**Documentation**: [ai.pydantic.dev](https://ai.pydantic.dev/)
 
-1. **Model-Agnostic Integration**: Supports multiple LLM providers:
-   - OpenAI
-   - Anthropic (Claude)
-   - Google (Gemini)
-   - Groq
-   - Mistral
-   - Ollama
-   - VertexAI
+---
 
-2. **Type-Safe Interactions**:
-   - Leverages Pydantic for request/response validation
-   - Ensures type safety throughout the agent lifecycle
-   - Provides structured output parsing
+When I first found FastAPI, I got it immediately. I was excited to find something so innovative and ergonomic built on Pydantic.
 
-3. **Agent Framework**:
-   - Tools and function calling support
-   - Streaming responses
-   - Retry mechanisms
-   - Result validation
-   - Conversation history management
+Virtually every Agent Framework and LLM library in Python uses Pydantic, but when we began to use LLMs in [Pydantic Logfire](https://pydantic.dev/logfire), I couldn't find anything that gave me the same feeling.
 
-## Implementation Details
+PydanticAI is a Python Agent Framework designed to make it less painful to build production grade applications with Generative AI.
 
-The framework is built on several key components:
+## Why use PydanticAI
 
-1. **Agent System**:
-   ```python
-   from pydantic_ai import Agent
-   from pydantic import BaseModel
+* Built by the team behind Pydantic (the validation layer of the OpenAI SDK, the Anthropic SDK, LangChain, LlamaIndex, AutoGPT, Transformers, CrewAI, Instructor and many more)
+* Model-agnostic — currently OpenAI, Gemini, Anthropic, Groq, and Mistral are supported. And there is a simple interface to implement support for other models.
+* [Type-safe](https://ai.pydantic.dev/agents/#static-type-checking)
+* Control flow and agent composition is done with vanilla Python, allowing you to make use of the same Python development best practices you'd use in any other (non-AI) project
+* [Structured response](https://ai.pydantic.dev/results/#structured-result-validation) validation with Pydantic
+* [Streamed responses](https://ai.pydantic.dev/results/#streamed-results), including validation of streamed _structured_ responses with Pydantic
+* Novel, type-safe [dependency injection system](https://ai.pydantic.dev/dependencies/), useful for testing and eval-driven iterative development
+* [Logfire integration](https://ai.pydantic.dev/logfire/) for debugging and monitoring the performance and general behavior of your LLM-powered application
 
-   # Define structured output
-   class Response(BaseModel):
-       answer: str
-       confidence: float
+## In Beta!
 
-   # Create agent with type safety
-   agent = Agent('openai:gpt-4', result_type=Response)
-   ```
+PydanticAI is in early beta, the API is still subject to change and there's a lot more to do.
+[Feedback](https://github.com/pydantic/pydantic-ai/issues) is very welcome!
 
-2. **Tool Integration**:
-   ```python
-   @agent.tool
-   async def get_weather(ctx: RunContext, city: str) -> str:
-       return f"Weather in {city}: Sunny"
-   ```
+## Hello World Example
 
-3. **Streaming Support**:
-   ```python
-   async with agent.run_stream('Tell me a story') as response:
-       async for chunk in response.stream_text():
-           print(chunk, end='', flush=True)
-   ```
+Here's a minimal example of PydanticAI:
 
-## Usage Instructions
-
-1. **Installation**:
-   ```bash
-   # Full installation with all providers
-   pip install pydantic-ai
-
-   # Minimal installation with specific provider
-   pip install 'pydantic-ai-slim[openai]'  # or [anthropic], [groq], etc.
-   ```
-
-2. **Configuration**:
-   ```python
-   # Set API key for your chosen provider
-   import os
-   os.environ['OPENAI_API_KEY'] = 'your-key'  # or ANTHROPIC_API_KEY, etc.
-   ```
-
-3. **Basic Usage**:
-   ```python
-   from pydantic_ai import Agent
-
-   # Create agent
-   agent = Agent('openai:gpt-4')  # or 'anthropic:claude-3', etc.
-
-   # Simple query
-   result = agent.run_sync('What is 2+2?')
-   print(result.data)
-   ```
-
-4. **Structured Responses**:
-   ```python
-   from pydantic import BaseModel
-
-   class MathResult(BaseModel):
-       answer: int
-       explanation: str
-
-   agent = Agent('openai:gpt-4', result_type=MathResult)
-   result = agent.run_sync('What is 2+2?')
-   print(f"Answer: {result.data.answer}")
-   print(f"Explanation: {result.data.explanation}")
-   ```
-
-## Testing
-
-The framework includes comprehensive test coverage:
-- Unit tests for core functionality
-- Model-specific tests
-- Integration tests
-- TestModel for development without API calls
-
-Key test files:
-- `tests/test_agent.py`: Core agent functionality
-- `tests/test_tools.py`: Tool system tests
-- `tests/models/test_model_test.py`: Test model verification
-
-To run tests without making API calls:
 ```python
 from pydantic_ai import Agent
-agent = Agent('test')  # Uses TestModel to avoid API calls
+
+# Define a very simple agent including the model to use, you can also set the model when running the agent.
+agent = Agent(
+    'gemini-1.5-flash',
+    # Register a static system prompt using a keyword argument to the agent.
+    # For more complex dynamically-generated system prompts, see the example below.
+    system_prompt='Be concise, reply with one sentence.',
+)
+
+# Run the agent synchronously, conducting a conversation with the LLM.
+# Here the exchange should be very short: PydanticAI will send the system prompt and the user query to the LLM,
+# the model will return a text response. See below for a more complex run.
+result = agent.run_sync('Where does "hello world" come from?')
+print(result.data)
+"""
+The first known use of "hello, world" was in a 1974 textbook about the C programming language.
+"""
 ```
 
-## Dependencies
-- Python 3.9+
-- pydantic >= 2.10
-- httpx >= 0.27.2
-- Provider-specific dependencies based on installation options
+_(This example is complete, it can be run "as is")_
 
-## Limitations
-1. Early beta status - API may change
-2. Requires appropriate API keys for each provider
-3. Some providers may have specific rate limits or costs
-4. Streaming support varies by provider
+Not very interesting yet, but we can easily add "tools", dynamic system prompts, and structured responses to build more powerful agents.
 
-## Potential Improvements
+## Tools & Dependency Injection Example
 
-Based on comprehensive analysis, here are suggested improvements for the Pydantic AI framework:
+Here is a concise example using PydanticAI to build a support agent for a bank:
 
-1. **Enhanced Error Handling and Validation**:
-   - Add more detailed error messages for API configuration issues
-   - Implement request/response validation middleware
-   - Add runtime type checking for tool return values
-   - Provide better debugging information for model parsing failures
+**(Better documented example [in the docs](https://ai.pydantic.dev/#tools-dependency-injection-example))**
 
-2. **Performance Optimizations**:
-   - Implement response caching for identical requests
-   - Add batch processing capabilities for multiple prompts
-   - Optimize token counting and context window management
-   - Implement concurrent tool execution where applicable
+```python
+from dataclasses import dataclass
 
-3. **Developer Experience**:
-   - Add CLI tools for project scaffolding and testing
-   - Provide more comprehensive documentation with real-world examples
-   - Create interactive tutorials and quickstart templates
-   - Improve error messages with suggested fixes
+from pydantic import BaseModel, Field
+from pydantic_ai import Agent, RunContext
 
-4. **Feature Additions**:
-   - Add support for function calling across all providers
-   - Implement conversation memory management
-   - Add built-in prompt templates and chain of thought support
-   - Create middleware system for request/response modification
+from bank_database import DatabaseConn
 
-5. **Testing and Reliability**:
-   - Expand test coverage for edge cases
-   - Add integration tests for all providers
-   - Implement automated performance benchmarks
-   - Add stress testing for concurrent operations
 
-6. **Security Enhancements**:
-   - Add rate limiting and quota management
-   - Implement request/response sanitization
-   - Add audit logging for API calls
-   - Provide secure credential management utilities
+# SupportDependencies is used to pass data, connections, and logic into the model that will be needed when running
+# system prompt and tool functions. Dependency injection provides a type-safe way to customise the behavior of your agents.
+@dataclass
+class SupportDependencies:
+    customer_id: int
+    db: DatabaseConn
 
-7. **Monitoring and Observability**:
-   - Add detailed logging and tracing
-   - Implement metrics collection
-   - Create dashboard templates for monitoring
-   - Add cost tracking and optimization tools
 
-These improvements would enhance the framework's reliability, performance, and developer experience while maintaining its core strengths of type safety and ease of use.
+# This pydantic model defines the structure of the result returned by the agent.
+class SupportResult(BaseModel):
+    support_advice: str = Field(description='Advice returned to the customer')
+    block_card: bool = Field(description="Whether to block the customer's card")
+    risk: int = Field(description='Risk level of query', ge=0, le=10)
 
-## Capabilities and Limitations
 
-### Capabilities
+# This agent will act as first-tier support in a bank.
+# Agents are generic in the type of dependencies they accept and the type of result they return.
+# In this case, the support agent has type `Agent[SupportDependencies, SupportResult]`.
+support_agent = Agent(
+    'openai:gpt-4o',
+    deps_type=SupportDependencies,
+    # The response from the agent will, be guaranteed to be a SupportResult,
+    # if validation fails the agent is prompted to try again.
+    result_type=SupportResult,
+    system_prompt=(
+        'You are a support agent in our bank, give the '
+        'customer support and judge the risk level of their query.'
+    ),
+)
 
-1. **Application Types**:
-   - Chatbots and conversational agents
-   - Content generation systems
-   - Data extraction and transformation tools
-   - Document analysis applications
-   - Question-answering systems
-   - Code generation and analysis tools
-   - Multi-step reasoning applications
 
-2. **Integration Capabilities**:
-   - Multiple LLM provider support
-   - Custom tool integration
-   - Streaming response handling
-   - Type-safe data validation
-   - Conversation history management
-   - Structured output parsing
-   - Async/sync operation modes
+# Dynamic system prompts can make use of dependency injection.
+# Dependencies are carried via the `RunContext` argument, which is parameterized with the `deps_type` from above.
+# If the type annotation here is wrong, static type checkers will catch it.
+@support_agent.system_prompt
+async def add_customer_name(ctx: RunContext[SupportDependencies]) -> str:
+    customer_name = await ctx.deps.db.customer_name(id=ctx.deps.customer_id)
+    return f"The customer's name is {customer_name!r}"
 
-3. **Development Features**:
-   - Type hints and validation
-   - Error handling and retries
-   - Testing without API calls
-   - Extensible tool system
-   - Custom result validators
-   - Message history tracking
-   - Provider-agnostic design
 
-### Limitations
+# `tool` let you register functions which the LLM may call while responding to a user.
+# Again, dependencies are carried via `RunContext`, any other arguments become the tool schema passed to the LLM.
+# Pydantic is used to validate these arguments, and errors are passed back to the LLM so it can retry.
+@support_agent.tool
+async def customer_balance(
+    ctx: RunContext[SupportDependencies], include_pending: bool
+) -> float:
+    """Returns the customer's current account balance."""
+    # The docstring of a tool is also passed to the LLM as the description of the tool.
+    # Parameter descriptions are extracted from the docstring and added to the parameter schema sent to the LLM.
+    balance = await ctx.deps.db.customer_balance(
+        id=ctx.deps.customer_id,
+        include_pending=include_pending,
+    )
+    return balance
 
-1. **Technical Constraints**:
-   - Python 3.9+ requirement
-   - Provider-specific feature availability
-   - Memory limited by LLM context windows
-   - Synchronous operations may block
-   - No built-in caching mechanism
-   - Limited cross-provider compatibility
 
-2. **Development Stage**:
-   - Early beta status
-   - API may change
-   - Limited production usage examples
-   - Incomplete provider feature parity
-   - Basic error handling
-   - Limited middleware options
+...  # In a real use case, you'd add more tools and a longer system prompt
 
-3. **Resource Considerations**:
-   - API costs from providers
-   - Rate limits vary by provider
-   - No built-in cost optimization
-   - Memory usage with large conversations
-   - Network dependency for operations
-   - Limited offline capabilities
 
-4. **Feature Gaps**:
-   - No built-in prompt templates
-   - Basic conversation management
-   - Limited provider switching
-   - No automatic retries
-   - Basic streaming implementation
-   - Limited tool parallelization
+async def main():
+    deps = SupportDependencies(customer_id=123, db=DatabaseConn())
+    # Run the agent asynchronously, conducting a conversation with the LLM until a final response is reached.
+    # Even in this fairly simple case, the agent will exchange multiple messages with the LLM as tools are called to retrieve a result.
+    result = await support_agent.run('What is my balance?', deps=deps)
+    # The result will be validated with Pydantic to guarantee it is a `SupportResult`, since the agent is generic,
+    # it'll also be typed as a `SupportResult` to aid with static type checking.
+    print(result.data)
+    """
+    support_advice='Hello John, your current account balance, including pending transactions, is $123.45.' block_card=False risk=1
+    """
 
-Understanding these capabilities and limitations helps developers:
-- Choose appropriate use cases
-- Plan for scalability
-- Implement necessary workarounds
-- Make informed provider choices
-- Design robust error handling
-- Manage resource usage effectively
+    result = await support_agent.run('I just lost my card!', deps=deps)
+    print(result.data)
+    """
+    support_advice="I'm sorry to hear that, John. We are temporarily blocking your card to prevent unauthorized transactions." block_card=True risk=8
+    """
+```
+
+## Next Steps
+
+To try PydanticAI yourself, follow the instructions [in the examples](https://ai.pydantic.dev/examples/).
+
+Read the [docs](https://ai.pydantic.dev/agents/) to learn more about building applications with PydanticAI.
+
+Read the [API Reference](https://ai.pydantic.dev/api/agent/) to understand PydanticAI's interface.
